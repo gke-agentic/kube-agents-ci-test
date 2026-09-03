@@ -1,0 +1,36 @@
+name: "Test: Native Token Tag Creation"
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: "Git Tag Name to create and push"
+        required: false
+        default: "test-native-tag-v1"
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  tag-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Configure Git Bot User
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Create and Push Tag
+        env:
+          TAG_NAME: ${{ inputs.tag_name }}
+        run: |
+          echo "🏷️ Attempting to create and push tag '${TAG_NAME}' using native GITHUB_TOKEN..."
+          git tag -a "${TAG_NAME}" -m "Automated test tag ${TAG_NAME}"
+          git push origin "${TAG_NAME}"
+          echo "✅ Successfully pushed tag '${TAG_NAME}' with native token!"
