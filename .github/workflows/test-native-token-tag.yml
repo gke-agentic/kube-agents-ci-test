@@ -1,4 +1,4 @@
-name: "Test: Native Token Tag Creation"
+name: "Test: Release Bot Tag Creation"
 
 on:
   workflow_dispatch:
@@ -6,31 +6,36 @@ on:
       tag_name:
         description: "Git Tag Name to create and push"
         required: false
-        default: "test-native-tag-v1"
+        default: "rc_test_app_v1"
         type: string
-
-permissions:
-  contents: write
 
 jobs:
   tag-test:
     runs-on: ubuntu-latest
     steps:
+      - name: Generate Release Bot Token
+        id: release-token
+        uses: actions/create-github-app-token@d72941d797fd3113feb6b93fd0dec494b13a2547 # v1.12.0
+        with:
+          app-id: ${{ vars.RELEASE_BOT_APP_ID }}
+          private-key: ${{ secrets.RELEASE_BOT_APP_PRIVATE_KEY }}
+
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
+          token: ${{ steps.release-token.outputs.token }}
 
       - name: Configure Git Bot User
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name "kube-agents-release-bot[bot]"
+          git config user.email "4817747+kube-agents-release-bot[bot]@users.noreply.github.com"
 
       - name: Create and Push Tag
         env:
           TAG_NAME: ${{ inputs.tag_name }}
         run: |
-          echo "🏷️ Attempting to create and push tag '${TAG_NAME}' using native GITHUB_TOKEN..."
+          echo "🏷️ Attempting to create and push tag '${TAG_NAME}' using GitHub App token..."
           git tag -a "${TAG_NAME}" -m "Automated test tag ${TAG_NAME}"
           git push origin "${TAG_NAME}"
-          echo "✅ Successfully pushed tag '${TAG_NAME}' with native token!"
+          echo "✅ Successfully pushed tag '${TAG_NAME}' with GitHub App token!"
